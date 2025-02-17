@@ -10,9 +10,9 @@ use crate::{
 };
 
 const FLOCK_SIZE: usize = 100;
-const START_RADIUS: f32 = 100.;
+const START_RADIUS: f32 = 200.;
 const SCAN_ANGLE: f32 = PI * 5. / 6.;
-const SCAN_DISTANCE: f32 = 20.0;
+const SCAN_DISTANCE: f32 = 60.0;
 
 pub struct FlockPlugin;
 
@@ -47,15 +47,15 @@ fn spawn_flock(mut commands: Commands, asset_server: Res<AssetServer>) {
                 distance: SCAN_DISTANCE,
             },
             Separation {
-                effectiveness: 0.2,
+                effectiveness: 1.0,
                 ..default()
             },
             Alignment {
-                effectiveness: 0.2,
+                effectiveness: 1.0,
                 ..default()
             },
             Cohesion {
-                effectiveness: 0.1,
+                effectiveness: 1.0,
                 ..default()
             },
             Name::new("Traveler"),
