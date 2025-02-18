@@ -24,12 +24,13 @@ impl Plugin for AppPlugin {
 
 fn setup_camera(mut commands: Commands) {
     // 2D orthographic camera
-    commands.spawn((
-        Camera3d::default(),
-        Projection::from(OrthographicProjection {
-            near: -CAMERA_DISTANCE,
-            far: CAMERA_DISTANCE,
-            ..OrthographicProjection::default_2d()
-        }),
-    ));
+    commands.spawn(Camera2d);
+    // commands.spawn((
+    //     Camera3d::default(),
+    //     Projection::from(OrthographicProjection {
+    //         near: -CAMERA_DISTANCE,
+    //         far: CAMERA_DISTANCE,
+    //         ..OrthographicProjection::default_2d()
+    //     }),
+    // ));
 }

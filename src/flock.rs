@@ -11,10 +11,15 @@ use crate::{
     steering_behaviors::{Alignment, Cohesion, Separation, SteeringBehavior},
 };
 
-const FLOCK_SIZE: usize = 100;
-const START_RADIUS: f32 = 200.;
-const SCAN_ANGLE: f32 = PI * 5. / 6.;
+const FLOCK_SIZE: usize = 40;
+const START_RADIUS: f32 = 100.;
+const START_VELOCITY: f32 = 60.0;
+
+const SCAN_ANGLE: f32 = PI * 2./3.;
 const SCAN_DISTANCE: f32 = 60.0;
+const ALIGNMENT: f32 = 1.5;
+const COHESION: f32 = 1.0;
+const SEPARATION: f32 = 2.0;
 
 pub struct FlockPlugin;
 
@@ -34,18 +39,15 @@ fn spawn_flock(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     for _ in 0..FLOCK_SIZE {
         commands.spawn((
-            Sprite {
-                image: texture.clone(),
-                ..default()
-            },
+            Sprite::from_image(texture.clone()),
             Transform::from_xyz(
                 rng.random_range(-START_RADIUS..START_RADIUS),
                 rng.random_range(-START_RADIUS..START_RADIUS),
                 0.0,
             ),
             Velocity(Vec2::new(
-                rng.random_range(-1.0..1.0),
-                rng.random_range(-1.0..1.0),
+                rng.random_range(-START_VELOCITY..START_VELOCITY),
+                rng.random_range(-START_VELOCITY..START_VELOCITY),
             )),
             Acceleration(Vec2::ZERO),
             Boid,
@@ -54,15 +56,15 @@ fn spawn_flock(mut commands: Commands, asset_server: Res<AssetServer>) {
                 distance: SCAN_DISTANCE,
             },
             Separation {
-                effectiveness: 1.0,
+                effectiveness: SEPARATION,
                 ..default()
             },
             Alignment {
-                effectiveness: 1.0,
+                effectiveness: ALIGNMENT,
                 ..default()
             },
             Cohesion {
-                effectiveness: 1.0,
+                effectiveness: COHESION,
                 ..default()
             },
             Name::new("Traveler"),
@@ -86,6 +88,7 @@ fn update_separation(
             }
         }
 
+        // info!("flockmate count: {:?}", flockmates_relative_location.len());
         separation.set_affecting_vector(&flockmates_relative_location);
     }
 }
@@ -101,11 +104,12 @@ fn update_alignment(
         for (neighbor_transform, neighbor_velocity) in neighbors.iter() {
             let neighbor_position: Vec2 = neighbor_transform.translation().xy();
 
-            if neighborhood.are_neighbors(&boid_position, &boid_velocity.0, &neighbor_position) {
+            if neighborhood.are_neighbors(&boid_position, &boid_velocity.0.normalize(), &neighbor_position) {
                 flockmates_relative_heading.push(neighbor_velocity.0);
             }
         }
 
+        // info!("flockmate count: {:?}", flockmates_relative_heading.len());
         aligment.set_affecting_vector(&flockmates_relative_heading);
     }
 }
@@ -126,6 +130,7 @@ fn update_cohesion(
             }
         }
 
+        // info!("flockmate count: {:?}", flockmates_relative_location.len());
         cohesion.set_affecting_vector(&flockmates_relative_location);
     }
 }
