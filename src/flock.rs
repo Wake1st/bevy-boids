@@ -4,9 +4,11 @@ use bevy::prelude::*;
 use rand::Rng;
 
 use crate::{
-    boid::{Alignment, Boid, BoidBehavior, Cohesion, Separation},
-    scanner::{Scanner, Scanning},
+    boid::Boid,
+    movement::{Acceleration, Velocity},
+    neighborhood::{Neighborhood, Neighboring},
     schedule::InGameSet,
+    steering_behaviors::{Alignment, Cohesion, Separation, SteeringBehavior},
 };
 
 const FLOCK_SIZE: usize = 100;
@@ -41,8 +43,13 @@ fn spawn_flock(mut commands: Commands, asset_server: Res<AssetServer>) {
                 rng.random_range(-START_RADIUS..START_RADIUS),
                 0.0,
             ),
+            Velocity(Vec2::new(
+                rng.random_range(-1.0..1.0),
+                rng.random_range(-1.0..1.0),
+            )),
+            Acceleration(Vec2::ZERO),
             Boid,
-            Scanner {
+            Neighborhood {
                 angle: SCAN_ANGLE,
                 distance: SCAN_DISTANCE,
             },
@@ -64,62 +71,61 @@ fn spawn_flock(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn update_separation(
-    mut boids: Query<(&GlobalTransform, &Scanner, &mut Separation)>,
+    mut boids: Query<(&GlobalTransform, &Velocity, &Neighborhood, &mut Separation)>,
     neighbors: Query<&GlobalTransform, With<Boid>>,
 ) {
-    for (boid_transform, scanner, mut separation) in boids.iter_mut() {
+    for (boid_transform, boid_velocity, neighborhood, mut separation) in boids.iter_mut() {
+        let boid_position: Vec2 = boid_transform.translation().xy();
+
         let mut flockmates_relative_location: Vec<Vec2> = Vec::new();
         for neighbor_transform in neighbors.iter() {
-            if boid_transform.has_flockmate(scanner, neighbor_transform) {
-                flockmates_relative_location.push(
-                    neighbor_transform.translation().xy() - boid_transform.translation().xy(),
-                );
+            let neighbor_position: Vec2 = neighbor_transform.translation().xy();
+
+            if neighborhood.are_neighbors(&boid_position, &boid_velocity.0, &neighbor_position) {
+                flockmates_relative_location.push(neighbor_position - boid_position);
             }
         }
 
-        separation.update_angle(
-            boid_transform.translation().xy(),
-            &flockmates_relative_location,
-        );
+        separation.set_affecting_vector(&flockmates_relative_location);
     }
 }
 
 fn update_alignment(
-    mut boids: Query<(&GlobalTransform, &Scanner, &mut Alignment)>,
-    neighbors: Query<&GlobalTransform, With<Boid>>,
+    mut boids: Query<(&GlobalTransform, &Velocity, &Neighborhood, &mut Alignment)>,
+    neighbors: Query<(&GlobalTransform, &Velocity), With<Boid>>,
 ) {
-    for (boid_transform, scanner, mut aligment) in boids.iter_mut() {
+    for (boid_transform, boid_velocity, neighborhood, mut aligment) in boids.iter_mut() {
+        let boid_position: Vec2 = boid_transform.translation().xy();
+
         let mut flockmates_relative_heading: Vec<Vec2> = Vec::new();
-        for neighbor_transform in neighbors.iter() {
-            if boid_transform.has_flockmate(scanner, neighbor_transform) {
-                flockmates_relative_heading.push((neighbor_transform.rotation() * Vec3::Y).xy());
+        for (neighbor_transform, neighbor_velocity) in neighbors.iter() {
+            let neighbor_position: Vec2 = neighbor_transform.translation().xy();
+
+            if neighborhood.are_neighbors(&boid_position, &boid_velocity.0, &neighbor_position) {
+                flockmates_relative_heading.push(neighbor_velocity.0);
             }
         }
 
-        aligment.update_angle(
-            boid_transform.translation().xy(),
-            &flockmates_relative_heading,
-        );
+        aligment.set_affecting_vector(&flockmates_relative_heading);
     }
 }
 
 fn update_cohesion(
-    mut boids: Query<(&GlobalTransform, &Scanner, &mut Cohesion)>,
+    mut boids: Query<(&GlobalTransform, &Velocity, &Neighborhood, &mut Cohesion)>,
     neighbors: Query<&GlobalTransform, With<Boid>>,
 ) {
-    for (boid_transform, scanner, mut cohesion) in boids.iter_mut() {
+    for (boid_transform, boid_velocity, neighborhood, mut cohesion) in boids.iter_mut() {
+        let boid_position: Vec2 = boid_transform.translation().xy();
+
         let mut flockmates_relative_location: Vec<Vec2> = Vec::new();
         for neighbor_transform in neighbors.iter() {
-            if boid_transform.has_flockmate(scanner, neighbor_transform) {
-                flockmates_relative_location.push(
-                    neighbor_transform.translation().xy() - boid_transform.translation().xy(),
-                );
+            let neighbor_position: Vec2 = neighbor_transform.translation().xy();
+
+            if neighborhood.are_neighbors(&boid_position, &boid_velocity.0, &neighbor_position) {
+                flockmates_relative_location.push(neighbor_position - boid_position);
             }
         }
 
-        cohesion.update_angle(
-            boid_transform.translation().xy(),
-            &flockmates_relative_location,
-        );
+        cohesion.set_affecting_vector(&flockmates_relative_location);
     }
 }
