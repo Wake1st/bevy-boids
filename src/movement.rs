@@ -6,11 +6,13 @@ use crate::{
     steering_behaviors::{Alignment, Cohesion, Separation},
 };
 
-const SPEED: f32 = 1.;
-const ACCELERATION_EFFECT: f32 = 1.0;
-const MAX_ACCELERATION: f32 = 15.0;
-const MAX_VELOCITY: f32 = 65.0;
-const WRAP_OFFSET: f32 = 16.;
+pub const SPEED: f32 = 1.;
+const ACCELERATION_EFFECT: f32 = 4.0;
+const VELOCITY_EFFECT: f32 = 95.0;
+pub const MAX_ACCELERATION: f32 = 0.4;
+const MAX_VELOCITY: f32 = 15.0;
+const MIN_VELOCITY: f32 = 5.0;
+const WRAP_OFFSET: f32 = 0.;
 
 pub struct MovementPlugin;
 
@@ -18,7 +20,12 @@ impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (set_acceleration, update_velocity, update_position, apply_screen_wrap)
+            (
+                update_position,
+                update_velocity,
+                set_acceleration,
+                apply_screen_wrap,
+            )
                 .in_set(InGameSet::UpdateMovement),
         );
     }
@@ -30,27 +37,23 @@ pub struct Velocity(pub Vec2);
 #[derive(Component, Default, Debug)]
 pub struct Acceleration(pub Vec2);
 
-fn update_position(
-    mut flock: Query<(&Velocity, &mut Transform), With<Boid>>,
-    time: Res<Time>,
-) {
+fn update_position(mut flock: Query<(&Velocity, &mut Transform), With<Boid>>, time: Res<Time>) {
     for (velocity, mut transform) in flock.iter_mut() {
         // move forward
-        transform.translation += SPEED * velocity.0.extend(0.0) * time.delta_secs();
-        // info!("pos: {:?}\tvel: {:?}", transform.translation.xy(), velocity.0);
+        transform.translation += velocity.0.extend(0.0); // * VELOCITY_EFFECT * time.delta_secs();
 
         // get the quaternion to rotate from the forward direction to the velocity
-        let rotate_to_velocity = Quat::from_rotation_arc(Vec3::Y, velocity.0.normalize().extend(0.));
+        let rotate_to_velocity =
+            Quat::from_rotation_arc(Vec3::Y, velocity.0.normalize().extend(0.));
         // rotate to velocity
         transform.rotation = rotate_to_velocity;
     }
 }
 
-fn update_velocity(mut flock: Query<(&Acceleration, &mut Velocity), With<Boid>>, time: Res<Time>) {
+fn update_velocity(mut flock: Query<(&Acceleration, &mut Velocity), With<Boid>>) {
     for (acceleration, mut velocity) in flock.iter_mut() {
-        let vel: Vec2 = velocity.0 + ACCELERATION_EFFECT * acceleration.0 * time.delta_secs();
-        velocity.0 = vel.normalize() * vel.length().min(MAX_VELOCITY);
-        // info!("vel: {:?}\tacc: {:?}", velocity.0, acceleration.0);
+        velocity.0 += acceleration.0;
+        velocity.0 = velocity.0.clamp_length_max(MAX_VELOCITY);
     }
 }
 
@@ -60,14 +63,8 @@ fn set_acceleration(
 ) {
     for (entity, mut acceleration) in flock.iter_mut() {
         if let Ok((separation, alignment, cohesion)) = behaviors.get(entity) {
-            // info!(
-            //     "sep: {:?}\tali: {:?}\tcoh: {:?}", 
-            //     separation.affecting_vector, 
-            //     alignment.affecting_vector, 
-            //     cohesion.affecting_vector
-            // );
-            let acc: Vec2 = separation.affecting_vector + alignment.affecting_vector + cohesion.affecting_vector;
-            acceleration.0 = acc.normalize() * acc.length().min(MAX_ACCELERATION);
+            acceleration.0 =
+                separation.steering_vector + alignment.steering_vector + cohesion.steering_vector;
         }
     }
 }
@@ -80,10 +77,23 @@ fn apply_screen_wrap(
         return;
     };
     let size = window.size() + WRAP_OFFSET;
-    let half_size = size / 2.0;
+    let half_width = size.x / 2.0;
+    let half_height = size.y / 2.0;
+
     for mut transform in &mut wrap_query {
-        let position = transform.translation.xy();
-        let wrapped = (position + half_size).rem_euclid(size) - half_size;
-        transform.translation = wrapped.extend(transform.translation.z);
+        let mut position = transform.translation.xy();
+
+        if position.x < -half_width {
+            position.x = half_width;
+        } else if position.x > half_width {
+            position.x = -half_width;
+        }
+        if position.y < -half_height {
+            position.y = half_height;
+        } else if position.y > half_height {
+            position.y = -half_height;
+        }
+
+        transform.translation = position.extend(0.0);
     }
 }
