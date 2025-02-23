@@ -77,18 +77,10 @@ fn spawn_flock(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn update_separation(
-    mut boids: Query<(
-        Entity,
-        &GlobalTransform,
-        &Velocity,
-        &Neighborhood,
-        &mut Separation,
-    )>,
+    mut boids: Query<(Entity, &GlobalTransform, &Velocity, &mut Separation)>,
     neighbors: Query<(Entity, &GlobalTransform), With<Boid>>,
 ) {
-    for (boid_entity, boid_transform, boid_velocity, neighborhood, mut separation) in
-        boids.iter_mut()
-    {
+    for (boid_entity, boid_transform, boid_velocity, mut separation) in boids.iter_mut() {
         let boid_position: Vec2 = boid_transform.translation().xy();
         let mut flockmates_combined_location: Vec2 = Vec2::ZERO;
         let mut flockmate_size: usize = 0;
@@ -116,9 +108,6 @@ fn update_separation(
                 flockmates_combined_location += inverse;
                 flockmate_size += 1;
             }
-            // let angle = boid_position.angle_to(neighbor_position);
-            // if distance < SEPARATION_DISTANCE && angle < SCAN_ANGLE {
-            // }
         }
 
         //  if no flockmates are present, then there's no vector to steer with
@@ -135,18 +124,10 @@ fn update_separation(
 }
 
 fn update_alignment(
-    mut boids: Query<(
-        Entity,
-        &GlobalTransform,
-        &Velocity,
-        &Neighborhood,
-        &mut Alignment,
-    )>,
+    mut boids: Query<(Entity, &GlobalTransform, &Velocity, &mut Alignment)>,
     neighbors: Query<(Entity, &GlobalTransform, &Velocity), With<Boid>>,
 ) {
-    for (boid_entity, boid_transform, boid_velocity, neighborhood, mut alignment) in
-        boids.iter_mut()
-    {
+    for (boid_entity, boid_transform, boid_velocity, mut alignment) in boids.iter_mut() {
         let boid_position: Vec2 = boid_transform.translation().xy();
         let mut flockmates_combined_heading: Vec2 = Vec2::ZERO;
         let mut flockmate_size: usize = 0;
@@ -171,10 +152,6 @@ fn update_alignment(
                 flockmates_combined_heading += neighbor_velocity.0;
                 flockmate_size += 1;
             }
-            // let distance = boid_position.distance(neighbor_position);
-            // let angle = boid_position.angle_to(neighbor_position);
-            // if distance < ALIGNMENT_DISTANCE && angle < SCAN_ANGLE {
-            // }
         }
 
         //  if no flockmates are present, then there's no vector to steer with
@@ -191,17 +168,10 @@ fn update_alignment(
 }
 
 fn update_cohesion(
-    mut boids: Query<(
-        Entity,
-        &GlobalTransform,
-        &Velocity,
-        &Neighborhood,
-        &mut Cohesion,
-    )>,
+    mut boids: Query<(Entity, &GlobalTransform, &Velocity, &mut Cohesion)>,
     neighbors: Query<(Entity, &GlobalTransform), With<Boid>>,
 ) {
-    for (boid_entity, boid_transform, boid_velocity, neighborhood, mut cohesion) in boids.iter_mut()
-    {
+    for (boid_entity, boid_transform, boid_velocity, mut cohesion) in boids.iter_mut() {
         let boid_position: Vec2 = boid_transform.translation().xy();
         let mut flockmates_combined_location: Vec2 = Vec2::ZERO;
         let mut flockmate_size: usize = 0;
@@ -226,10 +196,6 @@ fn update_cohesion(
                 flockmates_combined_location += neighbor_position;
                 flockmate_size += 1;
             }
-            // let distance = boid_position.distance(neighbor_position);
-            // let angle = boid_position.angle_to(neighbor_position);
-            // if distance < COHESION_DISTANCE && angle < SCAN_ANGLE {
-            // }
         }
 
         //  if no flockmates are present, then there's no vector to steer with
