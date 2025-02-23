@@ -6,11 +6,11 @@ use crate::{
     steering_behaviors::{Alignment, Cohesion, Separation},
 };
 
-pub const SPEED: f32 = 1.;
+pub const SPEED: f32 = 15.;
 const ACCELERATION_EFFECT: f32 = 4.0;
 const VELOCITY_EFFECT: f32 = 95.0;
-pub const MAX_ACCELERATION: f32 = 0.4;
-const MAX_VELOCITY: f32 = 15.0;
+pub const MAX_ACCELERATION: f32 = 0.08;
+pub const MAX_SPEED: f32 = 12.0;
 const MIN_VELOCITY: f32 = 5.0;
 const WRAP_OFFSET: f32 = 0.;
 
@@ -53,7 +53,7 @@ fn update_position(mut flock: Query<(&Velocity, &mut Transform), With<Boid>>, ti
 fn update_velocity(mut flock: Query<(&Acceleration, &mut Velocity), With<Boid>>) {
     for (acceleration, mut velocity) in flock.iter_mut() {
         velocity.0 += acceleration.0;
-        velocity.0 = velocity.0.clamp_length_max(MAX_VELOCITY);
+        velocity.0 = velocity.0.clamp_length_max(MAX_SPEED);
     }
 }
 

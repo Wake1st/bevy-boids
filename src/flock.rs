@@ -5,7 +5,7 @@ use rand::Rng;
 
 use crate::{
     boid::Boid,
-    movement::{Acceleration, MAX_ACCELERATION, SPEED, Velocity},
+    movement::{Acceleration, MAX_ACCELERATION, MAX_SPEED, Velocity},
     neighborhood::{Neighborhood, Neighboring},
     schedule::InGameSet,
     steering_behaviors::{Alignment, Cohesion, Separation, SteeringBehavior},
@@ -18,12 +18,12 @@ const START_VELOCITY: f32 = 4.;
 const SCAN_ANGLE: f32 = PI * 2. / 3.;
 const SCAN_DISTANCE: f32 = 120.0;
 const SEPARATION_EFFECTIVENESS: f32 = 1.8;
-const ALIGNMENT_EFFECTIVENESS: f32 = 1.2;
-const COHESION_EFFECTIVENESS: f32 = 0.8;
+const ALIGNMENT_EFFECTIVENESS: f32 = 1.6;
+const COHESION_EFFECTIVENESS: f32 = 1.2;
 
-const SEPARATION_DISTANCE: f32 = 20.;
-const ALIGNMENT_DISTANCE: f32 = 25.;
-const COHESION_DISTANCE: f32 = 55.;
+const SEPARATION_DISTANCE: f32 = 40.;
+const ALIGNMENT_DISTANCE: f32 = 60.;
+const COHESION_DISTANCE: f32 = 80.;
 
 pub struct FlockPlugin;
 
@@ -84,7 +84,7 @@ fn update_separation(
         &Neighborhood,
         &mut Separation,
     )>,
-    neighbors: Query<(Entity, &GlobalTransform, &Velocity), With<Boid>>,
+    neighbors: Query<(Entity, &GlobalTransform), With<Boid>>,
 ) {
     for (boid_entity, boid_transform, boid_velocity, neighborhood, mut separation) in
         boids.iter_mut()
@@ -94,7 +94,7 @@ fn update_separation(
         let mut flockmate_size: usize = 0;
 
         //  get average flockmate position
-        for (neighbor_entity, neighbor_transform, neighbor_velocity) in neighbors.iter() {
+        for (neighbor_entity, neighbor_transform) in neighbors.iter() {
             //  do not allow boids to effect themselves
             if boid_entity == neighbor_entity {
                 continue;
@@ -102,7 +102,7 @@ fn update_separation(
 
             let neighbor_position: Vec2 = neighbor_transform.translation().xy();
             let distance = boid_position.distance(neighbor_position);
-            let angle = boid_velocity.0.angle_to(neighbor_velocity.0);
+            let angle = boid_position.angle_to(neighbor_position);
             if distance < SEPARATION_DISTANCE && angle < SCAN_ANGLE {
                 let relative_position = boid_position - neighbor_position;
                 let inverse = relative_position / (distance * distance);
@@ -116,7 +116,7 @@ fn update_separation(
             separation.steering_vector = Vec2::ZERO;
         } else {
             let flockmates_avg_position = flockmates_combined_location / flockmate_size as f32;
-            let limited_position = flockmates_avg_position.normalize() * SPEED;
+            let limited_position = flockmates_avg_position.normalize() * MAX_SPEED;
             let relative_velocity = limited_position - boid_velocity.0;
             separation.steering_vector =
                 relative_velocity.clamp_length_max(MAX_ACCELERATION) * SEPARATION_EFFECTIVENESS;
@@ -150,7 +150,7 @@ fn update_alignment(
 
             let neighbor_position: Vec2 = neighbor_transform.translation().xy();
             let distance = boid_position.distance(neighbor_position);
-            let angle = boid_velocity.0.angle_to(neighbor_velocity.0);
+            let angle = boid_position.angle_to(neighbor_position);
             if distance < ALIGNMENT_DISTANCE && angle < SCAN_ANGLE {
                 flockmates_combined_heading += neighbor_velocity.0;
                 flockmate_size += 1;
@@ -162,7 +162,7 @@ fn update_alignment(
             alignment.steering_vector = Vec2::ZERO;
         } else {
             let flockmates_avg_velocity = flockmates_combined_heading / flockmate_size as f32;
-            let limited_flockmates_velocity = flockmates_avg_velocity.normalize() * SPEED;
+            let limited_flockmates_velocity = flockmates_avg_velocity.normalize() * MAX_SPEED;
             let relative_velocity = limited_flockmates_velocity - boid_velocity.0;
             alignment.steering_vector =
                 relative_velocity.clamp_length_max(MAX_ACCELERATION) * ALIGNMENT_EFFECTIVENESS;
@@ -178,7 +178,7 @@ fn update_cohesion(
         &Neighborhood,
         &mut Cohesion,
     )>,
-    neighbors: Query<(Entity, &GlobalTransform, &Velocity), With<Boid>>,
+    neighbors: Query<(Entity, &GlobalTransform), With<Boid>>,
 ) {
     for (boid_entity, boid_transform, boid_velocity, neighborhood, mut cohesion) in boids.iter_mut()
     {
@@ -187,7 +187,7 @@ fn update_cohesion(
         let mut flockmate_size: usize = 0;
 
         //  get average flockmate position
-        for (neighbor_entity, neighbor_transform, neighbor_velocity) in neighbors.iter() {
+        for (neighbor_entity, neighbor_transform) in neighbors.iter() {
             //  do not allow boids to effect themselves
             if boid_entity == neighbor_entity {
                 continue;
@@ -195,7 +195,7 @@ fn update_cohesion(
 
             let neighbor_position: Vec2 = neighbor_transform.translation().xy();
             let distance = boid_position.distance(neighbor_position);
-            let angle = boid_velocity.0.angle_to(neighbor_velocity.0);
+            let angle = boid_position.angle_to(neighbor_position);
             if distance < COHESION_DISTANCE && angle < SCAN_ANGLE {
                 flockmates_combined_location += neighbor_position;
                 flockmate_size += 1;
@@ -208,7 +208,7 @@ fn update_cohesion(
         } else {
             let flockmates_avg_position = flockmates_combined_location / flockmate_size as f32;
             let relative_position = flockmates_avg_position - boid_position;
-            let limited_position = relative_position.normalize() * SPEED;
+            let limited_position = relative_position.normalize() * MAX_SPEED;
             let relative_velocity = limited_position - boid_velocity.0;
             cohesion.steering_vector =
                 relative_velocity.clamp_length_max(MAX_ACCELERATION) * COHESION_EFFECTIVENESS;
