@@ -6,7 +6,7 @@ use rand::Rng;
 use crate::{
     boid::Boid,
     movement::{Acceleration, MAX_ACCELERATION, MAX_SPEED, Velocity},
-    neighborhood::{Neighborhood, Neighboring},
+    neighborhood::{Neighborhood, are_neighbors},
     schedule::InGameSet,
     steering_behaviors::{Alignment, Cohesion, Separation, SteeringBehavior},
 };
@@ -18,8 +18,8 @@ const START_VELOCITY: f32 = 4.;
 const SCAN_ANGLE: f32 = PI * 2. / 3.;
 const SCAN_DISTANCE: f32 = 120.0;
 const SEPARATION_EFFECTIVENESS: f32 = 1.8;
-const ALIGNMENT_EFFECTIVENESS: f32 = 1.6;
-const COHESION_EFFECTIVENESS: f32 = 1.2;
+const ALIGNMENT_EFFECTIVENESS: f32 = 0.8;
+const COHESION_EFFECTIVENESS: f32 = 0.8;
 
 const SEPARATION_DISTANCE: f32 = 40.;
 const ALIGNMENT_DISTANCE: f32 = 60.;
@@ -101,14 +101,24 @@ fn update_separation(
             }
 
             let neighbor_position: Vec2 = neighbor_transform.translation().xy();
-            let distance = boid_position.distance(neighbor_position);
-            let angle = boid_position.angle_to(neighbor_position);
-            if distance < SEPARATION_DISTANCE && angle < SCAN_ANGLE {
+            if are_neighbors(
+                &boid_position,
+                &boid_velocity.0,
+                &neighbor_position,
+                &Neighborhood {
+                    distance: SEPARATION_DISTANCE,
+                    angle: SCAN_ANGLE,
+                },
+            ) {
+                let distance = boid_position.distance(neighbor_position);
                 let relative_position = boid_position - neighbor_position;
                 let inverse = relative_position / (distance * distance);
                 flockmates_combined_location += inverse;
                 flockmate_size += 1;
             }
+            // let angle = boid_position.angle_to(neighbor_position);
+            // if distance < SEPARATION_DISTANCE && angle < SCAN_ANGLE {
+            // }
         }
 
         //  if no flockmates are present, then there's no vector to steer with
@@ -149,12 +159,22 @@ fn update_alignment(
             }
 
             let neighbor_position: Vec2 = neighbor_transform.translation().xy();
-            let distance = boid_position.distance(neighbor_position);
-            let angle = boid_position.angle_to(neighbor_position);
-            if distance < ALIGNMENT_DISTANCE && angle < SCAN_ANGLE {
+            if are_neighbors(
+                &boid_position,
+                &boid_velocity.0,
+                &neighbor_position,
+                &Neighborhood {
+                    distance: ALIGNMENT_DISTANCE,
+                    angle: SCAN_ANGLE,
+                },
+            ) {
                 flockmates_combined_heading += neighbor_velocity.0;
                 flockmate_size += 1;
             }
+            // let distance = boid_position.distance(neighbor_position);
+            // let angle = boid_position.angle_to(neighbor_position);
+            // if distance < ALIGNMENT_DISTANCE && angle < SCAN_ANGLE {
+            // }
         }
 
         //  if no flockmates are present, then there's no vector to steer with
@@ -194,12 +214,22 @@ fn update_cohesion(
             }
 
             let neighbor_position: Vec2 = neighbor_transform.translation().xy();
-            let distance = boid_position.distance(neighbor_position);
-            let angle = boid_position.angle_to(neighbor_position);
-            if distance < COHESION_DISTANCE && angle < SCAN_ANGLE {
+            if are_neighbors(
+                &boid_position,
+                &boid_velocity.0,
+                &neighbor_position,
+                &Neighborhood {
+                    distance: COHESION_DISTANCE,
+                    angle: SCAN_ANGLE,
+                },
+            ) {
                 flockmates_combined_location += neighbor_position;
                 flockmate_size += 1;
             }
+            // let distance = boid_position.distance(neighbor_position);
+            // let angle = boid_position.angle_to(neighbor_position);
+            // if distance < COHESION_DISTANCE && angle < SCAN_ANGLE {
+            // }
         }
 
         //  if no flockmates are present, then there's no vector to steer with

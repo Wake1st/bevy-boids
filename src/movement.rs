@@ -6,12 +6,8 @@ use crate::{
     steering_behaviors::{Alignment, Cohesion, Separation},
 };
 
-pub const SPEED: f32 = 15.;
-const ACCELERATION_EFFECT: f32 = 4.0;
-const VELOCITY_EFFECT: f32 = 95.0;
 pub const MAX_ACCELERATION: f32 = 0.08;
 pub const MAX_SPEED: f32 = 12.0;
-const MIN_VELOCITY: f32 = 5.0;
 const WRAP_OFFSET: f32 = 0.;
 
 pub struct MovementPlugin;
@@ -37,10 +33,10 @@ pub struct Velocity(pub Vec2);
 #[derive(Component, Default, Debug)]
 pub struct Acceleration(pub Vec2);
 
-fn update_position(mut flock: Query<(&Velocity, &mut Transform), With<Boid>>, time: Res<Time>) {
+fn update_position(mut flock: Query<(&Velocity, &mut Transform), With<Boid>>) {
     for (velocity, mut transform) in flock.iter_mut() {
         // move forward
-        transform.translation += velocity.0.extend(0.0); // * VELOCITY_EFFECT * time.delta_secs();
+        transform.translation += velocity.0.extend(0.0);
 
         // get the quaternion to rotate from the forward direction to the velocity
         let rotate_to_velocity =
