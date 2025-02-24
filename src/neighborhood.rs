@@ -30,8 +30,7 @@ impl Neighbors for SeparationNeighborhood {
         b_position: &Vec2,
     ) -> bool {
         let distance = a_position.distance(*b_position);
-        // let angle = a_position.angle_to(*b_position); //  why does this?
-        let angle = a_heading.angle_to(*b_position - a_position).abs();  // work better than this?
+        let angle = a_heading.angle_to(*b_position - a_position).abs();
         
         distance < self.distance && angle < self.angle
     }
@@ -45,8 +44,7 @@ impl Neighbors for AlignmentNeighborhood {
         b_position: &Vec2,
     ) -> bool {
         let distance = a_position.distance(*b_position);
-        // let angle = a_position.angle_to(*b_position); //  why does this?
-        let angle = a_heading.angle_to(*b_position - a_position).abs();  // work better than this?
+        let angle = a_heading.angle_to(*b_position - a_position).abs();
 
         distance < self.distance && angle < self.angle
     }
@@ -60,8 +58,7 @@ impl Neighbors for CohesionNeighborhood {
         b_position: &Vec2,
     ) -> bool {
         let distance = a_position.distance(*b_position);
-        // let angle = a_position.angle_to(*b_position); //  why does this?
-        let angle = a_heading.angle_to(*b_position - a_position).abs();  // work better than this?
+        let angle = a_heading.angle_to(*b_position - a_position).abs();
         
         distance < self.distance && angle < self.angle
     }
