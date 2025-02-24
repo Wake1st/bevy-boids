@@ -6,9 +6,8 @@ use crate::{
     steering_behaviors::{Alignment, Cohesion, Separation},
 };
 
-pub const MAX_ACCELERATION: f32 = 0.08;
+pub const MAX_ACCELERATION: f32 = 0.3;
 pub const MAX_SPEED: f32 = 12.0;
-const WRAP_OFFSET: f32 = 0.;
 
 pub struct MovementPlugin;
 
@@ -72,7 +71,7 @@ fn apply_screen_wrap(
     let Ok(window) = window_query.get_single() else {
         return;
     };
-    let size = window.size() + WRAP_OFFSET;
+    let size = window.size();
     let half_width = size.x / 2.0;
     let half_height = size.y / 2.0;
 

@@ -1,6 +1,6 @@
-use bevy::{prelude::*, render::render_resource::encase::private::Length};
+use bevy::prelude::*;
 
-use crate::movement::MAX_ACCELERATION;
+use crate::movement::{Velocity, MAX_ACCELERATION, MAX_SPEED};
 
 #[derive(Component, Default, Debug)]
 pub struct Separation {
@@ -21,20 +21,19 @@ pub struct Cohesion {
 }
 
 pub trait SteeringBehavior {
-    fn set_steering_vector(&mut self, flockmates: &Vec<Vec2>) -> ();
+    fn set_steering_vector(&mut self, flockmate_size: usize, flockmates: Vec2, boid_velocity: &Velocity, boid_position: Vec2) -> ();
 }
 
 impl SteeringBehavior for Separation {
     /// Flockmates are relative location
-    fn set_steering_vector(&mut self, flockmates: &Vec<Vec2>) -> () {
-        let flock_size: f32 = flockmates.length() as f32;
+    fn set_steering_vector(&mut self, flockmate_size: usize, flockmates_vector: Vec2, boid_velocity: &Velocity, _boid_position: Vec2) -> () {
         if flockmate_size == 0 {
-            separation.steering_vector = Vec2::ZERO;
+            self.steering_vector = Vec2::ZERO;
         } else {
-            let flockmates_avg_position = flockmates_combined_location / flockmate_size as f32;
+            let flockmates_avg_position = flockmates_vector / flockmate_size as f32;
             let limited_position = flockmates_avg_position.normalize() * MAX_SPEED;
             let relative_velocity = limited_position - boid_velocity.0;
-            separation.steering_vector =
+            self.steering_vector =
                 relative_velocity.clamp_length_max(MAX_ACCELERATION) * self.effectiveness;
         }
     }
@@ -42,15 +41,14 @@ impl SteeringBehavior for Separation {
 
 impl SteeringBehavior for Alignment {
     /// Flockmates are heading and should be unit vectors
-    fn set_steering_vector(&mut self, flockmates: &Vec<Vec2>) -> () {
-        let flock_size: f32 = flockmates.length() as f32;
+    fn set_steering_vector(&mut self, flockmate_size: usize, flockmates_vector: Vec2, boid_velocity: &Velocity, _boid_position: Vec2) -> () {
         if flockmate_size == 0 {
-            alignment.steering_vector = Vec2::ZERO;
+            self.steering_vector = Vec2::ZERO;
         } else {
-            let flockmates_avg_velocity = flockmates_combined_heading / flockmate_size as f32;
+            let flockmates_avg_velocity = flockmates_vector / flockmate_size as f32;
             let limited_flockmates_velocity = flockmates_avg_velocity.normalize() * MAX_SPEED;
             let relative_velocity = limited_flockmates_velocity - boid_velocity.0;
-            alignment.steering_vector =
+            self.steering_vector =
                 relative_velocity.clamp_length_max(MAX_ACCELERATION) * self.effectiveness;
         }
     }
@@ -58,16 +56,15 @@ impl SteeringBehavior for Alignment {
 
 impl SteeringBehavior for Cohesion {
     /// Flockmates are relative location
-    fn set_steering_vector(&mut self, flockmates: &Vec<Vec2>) -> () {
-        let flock_size: f32 = flockmates.length() as f32;
+    fn set_steering_vector(&mut self, flockmate_size: usize, flockmates_vector: Vec2, boid_velocity: &Velocity, boid_position: Vec2) -> () {
         if flockmate_size == 0 {
-            cohesion.steering_vector = Vec2::ZERO;
+            self.steering_vector = Vec2::ZERO;
         } else {
-            let flockmates_avg_position = flockmates_combined_location / flockmate_size as f32;
+            let flockmates_avg_position = flockmates_vector / flockmate_size as f32;
             let relative_position = flockmates_avg_position - boid_position;
             let limited_position = relative_position.normalize() * MAX_SPEED;
             let relative_velocity = limited_position - boid_velocity.0;
-            cohesion.steering_vector =
+            self.steering_vector =
                 relative_velocity.clamp_length_max(MAX_ACCELERATION) * self.effectiveness;
         }
     }

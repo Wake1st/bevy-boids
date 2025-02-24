@@ -27,5 +27,4 @@ A boid simulator in bevy.
 
 ## Issues
 
-- they keep dissappearing
-- values need tweaking
+- not performant (should use shader code and/or quad-trees)
