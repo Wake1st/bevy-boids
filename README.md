@@ -24,6 +24,7 @@ A boid simulator in bevy.
 
 - [The Coding Train](https://www.youtube.com/watch?v=mhjuuHl6qHM)
 - [Boids by Craig Raynolds](https://red3d.com/cwr/boids/)
+- [Natsu-Anon](https://github.com/natsu-anon/BoidsDemo)
 
 ## Issues
 
