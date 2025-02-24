@@ -6,9 +6,6 @@ use crate::{
     steering_behaviors::{Alignment, Cohesion, Separation},
 };
 
-pub const MAX_ACCELERATION: f32 = 0.3;
-pub const MAX_SPEED: f32 = 12.0;
-
 pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
@@ -27,19 +24,32 @@ impl Plugin for MovementPlugin {
 }
 
 #[derive(Component, Default, Debug)]
-pub struct Velocity(pub Vec2);
+pub struct Velocity {
+    pub value: Vec2,
+    pub max: f32,
+}
+
 
 #[derive(Component, Default, Debug)]
-pub struct Acceleration(pub Vec2);
+pub struct Acceleration {
+    pub value: Vec2,
+    pub max: f32,
+}
+
+impl Velocity {
+    fn clamp(&self) -> Vec2 {
+        self.value.clamp_length_max(self.max)
+    }
+}
 
 fn update_position(mut flock: Query<(&Velocity, &mut Transform), With<Boid>>) {
     for (velocity, mut transform) in flock.iter_mut() {
         // move forward
-        transform.translation += velocity.0.extend(0.0);
+        transform.translation += velocity.value.extend(0.0);
 
         // get the quaternion to rotate from the forward direction to the velocity
         let rotate_to_velocity =
-            Quat::from_rotation_arc(Vec3::Y, velocity.0.normalize().extend(0.));
+            Quat::from_rotation_arc(Vec3::Y, velocity.value.normalize().extend(0.));
         // rotate to velocity
         transform.rotation = rotate_to_velocity;
     }
@@ -47,8 +57,8 @@ fn update_position(mut flock: Query<(&Velocity, &mut Transform), With<Boid>>) {
 
 fn update_velocity(mut flock: Query<(&Acceleration, &mut Velocity), With<Boid>>) {
     for (acceleration, mut velocity) in flock.iter_mut() {
-        velocity.0 += acceleration.0;
-        velocity.0 = velocity.0.clamp_length_max(MAX_SPEED);
+        velocity.value += acceleration.value;
+        velocity.value = velocity.clamp();
     }
 }
 
@@ -58,7 +68,7 @@ fn set_acceleration(
 ) {
     for (entity, mut acceleration) in flock.iter_mut() {
         if let Ok((separation, alignment, cohesion)) = behaviors.get(entity) {
-            acceleration.0 =
+            acceleration.value =
                 separation.steering_vector + alignment.steering_vector + cohesion.steering_vector;
         }
     }
